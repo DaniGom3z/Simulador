@@ -23,50 +23,36 @@ func CrearAutomovil(p *Parking, m *canvas.Image) *Automovil {
 }
 
 func (a *Automovil) MoverCarro() {
-	a.Parking.EspaciosParking <- true
-	a.Parking.M.Lock()
+	// Bloquea hasta que hay un espacio disponible
+	espacio := <-a.Parking.EspaciosParking // Espera un espacio
 
-	// Buscar un lugar disponible
-	for i := 0; i < len(a.Parking.EspaciosParking); i++ {
-		if !a.Parking.LugaresParking[i].Ocupado {
-			a.modelo.Move(fyne.NewPos(a.Parking.LugaresParking[i].PosicionX, a.Parking.LugaresParking[i].PosicionY))
-			a.modelo.Refresh()
-
-			// Ocupa el lugar
-			a.posicionParking = i
-			a.Parking.LugaresParking[i].Ocupado = true
-			break
-		}
-	}
+	// Ocupar el espacio
+	a.Parking.LugaresParking[espacio.Index].OcuparLugar()
+	a.modelo.Move(fyne.NewPos(a.Parking.LugaresParking[espacio.Index].PosicionX, a.Parking.LugaresParking[espacio.Index].PosicionY))
+	a.modelo.Refresh()
 
 	now := time.Now()
 	horaLocal := now.Format("15:04:05")
 	fechaLocal := now.Format("2006-01-02")
-
-	fmt.Println("El vehiculo", a.Identificador, "Entró a las", horaLocal, "el", fechaLocal)
+	fmt.Println("El vehículo", a.Identificador, "entró a las", horaLocal, "el", fechaLocal)
 	time.Sleep(300 * time.Millisecond)
 
-	// Desbloquear Mutex
-	a.Parking.M.Unlock()
-
-	TiempoEsperaTurno := rand.Intn(6) + 5 
+	// Simular tiempo en el parking
+	TiempoEsperaTurno := rand.Intn(3) + 3
 	time.Sleep(time.Duration(TiempoEsperaTurno) * time.Second)
 
-	// Volver a bloquear el Mutex antes de salir
-	a.Parking.M.Lock()
-
-	// Liberar el espacio de automóviles
-	<-a.Parking.EspaciosParking
-	a.Parking.LugaresParking[a.posicionParking].Ocupado = false
-	a.modelo.Move(fyne.NewPos(350, 0))
+	// Liberar el espacio
+	a.Parking.LugaresParking[espacio.Index].LiberarLugar()
+	a.modelo.Move(fyne.NewPos(410, 0))
+	time.Sleep(300 * time.Millisecond)
+	a.modelo.Move(fyne.NewPos(410, -150))
 	a.modelo.Refresh()
 
-	// Registrar la salida después de la espera
-	now = time.Now() // Obtener la hora actual nuevamente para la salida
+	now = time.Now()
 	horaSalida := now.Format("15:04:05")
-	fmt.Println("El vehiculo", a.Identificador, "Salió a las", horaSalida, "el", fechaLocal)
+	fmt.Println("El vehículo", a.Identificador, "salió a las", horaSalida, "el", fechaLocal)
 	time.Sleep(300 * time.Millisecond)
 
-	// Desbloquear el Mutex
-	a.Parking.M.Unlock()
+	// Regresar el espacio al canal
+	a.Parking.EspaciosParking <- espacio
 }

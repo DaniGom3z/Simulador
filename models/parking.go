@@ -2,20 +2,16 @@ package models
 
 import (
 	"fyne.io/fyne/v2/canvas"
-	"sync"
 )
 
-type Lugar struct {
-	PosicionX float32
-	PosicionY float32
-	Ocupado   bool
+type Espacio struct {
+	Index int
 }
 
 type Parking struct {
-	EspaciosParking  chan bool
-	LugaresParking   []Lugar
+	EspaciosParking  chan Espacio 
 	ColocarAutomovil chan *canvas.Image
-	M                sync.Mutex
+	LugaresParking   []Lugar
 }
 
 func CrearParking(nP int) *Parking {
@@ -38,9 +34,16 @@ func CrearParking(nP int) *Parking {
 		}
 	}
 
-	return &Parking{
-		EspaciosParking:  make(chan bool, nP+1),
+	parking := &Parking{
+		EspaciosParking:  make(chan Espacio, nP), 
 		ColocarAutomovil: make(chan *canvas.Image, 100),
 		LugaresParking:   lugares,
 	}
+
+	// Inicializa los espacios disponibles
+	for i := 0; i < nP; i++ {
+		parking.EspaciosParking <- Espacio{Index: i}
+	}
+
+	return parking
 }

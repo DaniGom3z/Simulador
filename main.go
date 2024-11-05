@@ -8,7 +8,7 @@ import (
 
 func main() {
 	interfaz := app.New()
-	ventana := interfaz.NewWindow("Estacioanmiento    10 por hora o fracción")
+	ventana := interfaz.NewWindow("Estacionamiento 10 por hora o fracción")
 
 	ventana.CenterOnScreen()
 	ventana.SetFixedSize(true)
